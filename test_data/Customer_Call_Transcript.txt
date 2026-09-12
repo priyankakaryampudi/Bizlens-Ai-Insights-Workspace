@@ -1,0 +1,12 @@
+Customer feedback call – sample transcript
+
+Customer: We like the product, but delivery delays have become frustrating.
+CS Lead: Has this affected renewal or cancellation decisions?
+Customer: For some orders, yes. When the promised timeline is missed, our teams cannot plan.
+CS Lead: Which product is most affected?
+Customer: Mostly Cloud Suite orders, although we have seen delays elsewhere too.
+CS Lead: Would faster resolution change your likelihood of continuing?
+Customer: It would definitely help, especially if we can get reliable delivery dates.
+
+Internal note:
+Validate whether customers reporting delivery issues have higher cancellation rates. Do not assume the relationship is causal until customer-level data is checked.
