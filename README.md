@@ -1,6 +1,6 @@
 # BizLens
 
-**BizLens 4.1 — AI-Assisted Business Analysis Workspace**
+**BizLens — AI-Assisted Business Analysis Workspace**
 
 BizLens is a Streamlit application that turns raw business evidence — sales data, requirements docs, meeting notes, management reviews, call transcripts — into a single connected workspace that a Business Analyst can use to go from "something changed" to a management-ready decision pack.
 
