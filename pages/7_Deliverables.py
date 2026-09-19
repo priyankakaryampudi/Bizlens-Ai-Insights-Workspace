@@ -23,7 +23,7 @@ if not st.session_state.get('recommendations_v2'):
     st.session_state.recommendations_v2=decision_recommendations(st.session_state.df,st.session_state.doc_signals,st.session_state.get('investigations',[]),objective,st.session_state.get('evidence_register',[]))
 choices=['Executive Brief','BRD','Product Requirements Document (PRD)','Functional Requirements Document (FRD)','Process Specification (AS-IS / TO-BE)','Root Cause Analysis (RCA)','Data & Business Analysis Report','KPI / Performance Review','Gap Analysis','Business Case / Improvement Proposal','Requirements Traceability Matrix (RTM)','Implementation Roadmap','User Stories & Acceptance Criteria','Use Case Catalogue','UAT & Test Scenarios','Stakeholder Analysis','RACI Matrix','Action Plan']
 
-section_head('Choose a deliverable')
+section_head('Choose a deliverable', 'Create one professional BA artifact from the same connected evidence and analysis.')
 artifact=st.selectbox('Deliverable',choices,index=None,placeholder='Select what you want to create')
 if not artifact:
     st.caption('Select one deliverable to preview it. BizLens deliberately does not dump every artifact at once.')
@@ -50,7 +50,8 @@ def _doc_title(deliverable, objective):
 
 doc_title = _doc_title(artifact, objective)
 sections=studio_sections(artifact,objective,findings,st.session_state.doc_signals,st.session_state.df,st.session_state.get('investigations',[]),st.session_state.get('recommendations_v2',[]),st.session_state.get('evidence_register',[]))
-section_head('Preview')
+st.markdown(f'<div class="doc-cover"><span class="eyebrow">Evidence-backed output</span><b>{doc_title}</b><div class="small-note">Generated from the active workspace. Human review remains the final approval step.</div></div>', unsafe_allow_html=True)
+section_head('Preview', 'Review the structure before generating the final file.')
 for h,b in sections:
     with st.expander(h,expanded=h.startswith('1.')):
         diagram=parse_diagram_body(b)
