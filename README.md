@@ -58,7 +58,8 @@ BizLens brings these sources into **one connected workflow**, so analysis, inves
 
 | Workspace | Data & Insights | Investigation |
 |:---:|:---:|:---:|
-| ![Workspace](screenshots/home.png) | ![Data & Insights](screenshots/data-insights.png) | ![Investigation](screenshots/investigation.png) |
+| ![Workspace](<img width="1915" height="914" alt="BizLens_Workspace" src="https://github.com/user-attachments/assets/387d6cb9-04a6-4028-9301-2efe83a2ac50" />
+) | ![Data & Insights](screenshots/data-insights.png) | ![Investigation](screenshots/investigation.png) |
 
 ---
 
