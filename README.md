@@ -56,7 +56,7 @@ BizLens brings these sources into **one connected workflow**, so analysis, inves
 
 ## 🎥 Demo
 
-[▶️ Watch the BizLens Demo](<video src="BizLens_compressed.mp4" controls width="100%" ></video>)
+[▶️ Watch the BizLens Demo](<video src="https://www.dropbox.com/scl/fi/oo2hfrd9ob5l3mwvgwr68/Screen-Recording-2026-09-20-165828.mp4?rlkey=cxtdvr0278cb19xyhd76wwqfx&st=8p6azjj5&dl=0" controls width="100%" ></video>)
 
 ---
 
