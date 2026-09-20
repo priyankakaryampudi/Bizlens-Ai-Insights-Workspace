@@ -54,6 +54,12 @@ BizLens brings these sources into **one connected workflow**, so analysis, inves
 
 ---
 
+## 🎥 Demo
+
+[▶️ Watch the BizLens Demo]()
+
+---
+
 ## 🖼️ Screenshots
 
 ### Workspace
