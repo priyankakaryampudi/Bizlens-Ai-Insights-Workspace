@@ -1,35 +1,18 @@
+
+
+
 BizLens
-
-BizLens — AI-Assisted Business Analysis Workspace
-
+AI-Assisted Business Analysis Workspace
 BizLens is a Streamlit application that connects business data, documents, investigation, recommendations, and professional BA deliverables in one workspace.
 
-Instead of stopping at “what happened?”, BizLens helps move from:
+Instead of stopping at "what happened?", BizLens helps move from:
 
 What changed → Where to investigate → What needs validation → What action can be taken
 
-Screenshots
-Workspace Overview
-
-BizLens Workspace
-
-Data & Insights
-
-Data and Insights Dashboard
-
-Investigation
-
-Investigation Workspace
-
-Deliverables Studio
-
-Deliverables Studio
-
 Why BizLens?
+Business analysis often involves working across multiple sources:
 
-Business analysis often requires working with different types of evidence:
-
-Sales and operational datasets
+Sales and operational data
 
 Requirements documents
 
@@ -37,320 +20,162 @@ Meeting notes
 
 Management reviews
 
-Customer or support transcripts
-
-Process observations
+Customer or support information
 
 KPI reports
 
-These sources are usually handled separately. BizLens brings them together so that analysis, investigation, recommendations, and deliverables are based on the same connected evidence.
+BizLens brings these sources together into one connected workflow, allowing analysis, investigation, recommendations, and deliverables to work from the same business evidence.
 
-What BizLens Does
-
-BizLens helps a Business Analyst:
-
-Understand the business context.
-
-Quantify what changed.
-
-Identify where the change is concentrated.
-
-Investigate possible contributing signals.
-
-Separate facts from hypotheses.
-
-Identify what needs further validation.
-
-Define actions, owners, and success measures.
-
-Generate structured BA deliverables.
-
-The application can also answer questions about uploaded data and documents using local analysis and optional AI-assisted synthesis.
-
-Key Features
-
-Evidence Workspace Connect datasets and business documents in one workspace.
-
-Data & Insights Profile data, calculate KPIs, identify trends, and explore business dimensions.
-
-Business Context Extract requirements, decisions, business concerns, and supporting evidence from documents.
-
-Investigation Explore where changes are concentrated and identify possible contributing signals.
-
-Recommendations Convert findings into an action path with evidence, owners, validation needs, and success measures.
-
-Ask BizLens Ask questions about connected datasets and documents using natural language.
-
-Deliverables Studio Generate structured BA documents from the same workspace.
-
-Data Quality Checks Identify missing values, duplicates, inconsistent fields, and potential outliers.
-
-How It Works
-Business Evidence
-       ↓
-Understand
-       ↓
-Measure
-       ↓
-Investigate
-       ↓
-Validate
-       ↓
-Decide
-       ↓
-Deliver
-
-The workflow follows a practical Business Analysis process:
-
-Business problem → Quantified change → Investigation → Validation → Business impact → Action → Deliverable
-
+Screenshots
 Workspace
-
-Area
-
-	
-
-Purpose
-
-
-
-
-Home
-
-	
-
-Connect evidence and understand the overall business problem
-
-
-
-
-Ask BizLens
-
-	
-
-Ask questions about connected data and documents
-
-
-
 
 Data & Insights
 
-	
-
-KPIs, trends, charts, and data quality checks
-
-
-
-
-Business Context
-
-	
-
-Requirements, business evidence, and open decisions
-
-
-
-
 Investigation
 
-	
+How It Works
+Business Evidence
+        ↓
+    Understand
+        ↓
+      Measure
+        ↓
+    Investigate
+        ↓
+     Validate
+        ↓
+      Decide
+        ↓
+     Deliver
+The workflow follows a practical Business Analysis approach:
 
-Explore patterns, contributing signals, and validation needs
+Business problem → Quantified change → Investigation → Validation → Business impact → Action → Deliverable
 
+Key Features
+Evidence Workspace
+Connect business datasets and supporting documents in one workspace.
 
+Supported formats:
+CSV · XLSX · XLS · DOCX · PDF · PPTX · TXT
 
+Data & Insights
+KPI analysis
+
+Trend analysis
+
+Business dimension analysis
+
+Interactive visualizations
+
+Data profiling
+
+Data quality checks
+
+Business Context
+Organize:
+
+Requirements
+
+Business evidence
+
+Decisions
+
+Open questions
+
+Stakeholder context
+
+Investigation
+Explore:
+
+Where changes are concentrated
+
+Possible contributing signals
+
+Operational patterns
+
+Areas requiring further validation
 
 Recommendations
+Turn findings into an actionable path containing:
 
-	
+Supporting evidence
 
-Define an actionable solution path
+Proposed action
 
+Owner
 
+Success measure
 
+Validation requirements
 
-Studio
+Ask BizLens
+Ask questions about the connected workspace using natural language.
 
-	
+Example questions:
 
-Generate structured BA deliverables
+Why did revenue change?
 
-Supported file types:
+Which region requires attention?
 
-CSV
+What are the key business requirements?
 
-XLSX
-
-XLS
-
-DOCX
-
-PDF
-
-PPTX
-
-TXT
+What information still needs validation?
+Deliverables Studio
+Generate structured Business Analysis deliverables from the connected workspace.
 
 Core Principles
+Evidence Before Assumptions
+Observed evidence is kept separate from assumptions and hypotheses.
 
-Evidence before assumptions
+Analysis Before Conclusions
+Business patterns are identified before recommendations are generated.
 
-Facts are separated from hypotheses
+Validation Before Root Cause
+A contributing signal is not automatically treated as a confirmed root cause.
 
-Correlation is not treated as causation
+No Silent Data Changes
+Potential data quality issues are surfaced instead of silently changing the source data.
 
-Underlying numbers are calculated locally
+Traceability
+Requirements and findings can be carried through into downstream BA deliverables.
 
-Source data is not silently modified
+BA Deliverables
+BizLens supports a structured deliverable pack including:
 
-Requirements remain traceable across deliverables
-
-Unknown ownership is marked for confirmation
-
-Human review remains part of the decision process
-
-Deliverables
-
-BizLens supports a structured BA deliverable pack including:
-
-Executive Brief
-
-Business Requirements Document
-
-Product Requirements Document
-
-Functional Requirements Document
-
-AS-IS / TO-BE Process Specification
-
-Root Cause Analysis
-
-Data & Business Analysis Report
-
-KPI Performance Review
-
-Gap Analysis
-
-Business Case
-
-Requirements Traceability Matrix
-
-Implementation Roadmap
-
-User Stories
-
-Use Cases
-
-UAT Scenarios
-
-Stakeholder Analysis
-
-RACI Matrix
-
-Action Plan
-
-These deliverables can be generated through the Studio page using the connected workspace evidence.
-
+#	Deliverable
+01	Executive Brief
+02	Business Requirements Document
+03	Product Requirements Document
+04	Functional Requirements Document
+05	AS-IS / TO-BE Process Specification
+06	Root Cause Analysis
+07	Data & Business Analysis Report
+08	KPI Performance Review
+09	Gap Analysis
+10	Business Case
+11	Requirements Traceability Matrix
+12	Implementation Roadmap
+13	User Stories
+14	Use Cases
+15	UAT Scenarios
+16	Stakeholder Analysis
+17	RACI Matrix
+18	Action Plan
 Tech Stack
-
-Area
-
-	
-
-Technology
-
-
-
-
-Application
-
-	
-
-Streamlit
-
-
-
-
-Language
-
-	
-
-Python
-
-
-
-
-Data Analysis
-
-	
-
-Pandas, NumPy
-
-
-
-
-Visualizations
-
-	
-
-Plotly
-
-
-
-
-Spreadsheet Processing
-
-	
-
-OpenPyXL, XLRD
-
-
-
-
-Document Parsing
-
-	
-
-python-docx, pypdf, pdfplumber, python-pptx
-
-
-
-
-Report Generation
-
-	
-
-ReportLab, python-docx
-
-
-
-
-Diagrams
-
-	
-
-Graphviz
-
-
-
-
-Optional AI
-
-	
-
-Google Gemini, OpenAI
-
-
-
-
-Configuration
-
-	
-
-python-dotenv
-
+Area	Technology
+Application	Streamlit
+Language	Python
+Data Analysis	Pandas, NumPy
+Visualization	Plotly
+Spreadsheet Processing	OpenPyXL, XLRD
+Document Parsing	python-docx, pypdf, pdfplumber, python-pptx
+Report Generation	ReportLab, python-docx
+Diagrams	Graphviz
+Optional AI	Google Gemini, OpenAI
+Configuration	python-dotenv
 Project Structure
 BizLens/
+│
 ├── app.py
 ├── run_bizlens.bat
 ├── run_tests.py
@@ -362,8 +187,7 @@ BizLens/
 ├── screenshots/
 │   ├── home.png
 │   ├── data-insights.png
-│   ├── investigation.png
-│   └── studio.png
+│   └── investigation.png
 │
 ├── pages/
 │   ├── home.py
@@ -394,69 +218,60 @@ BizLens/
 ├── tests/
 └── deliverables/
 Installation
+Requirements
+Python 3.13
 
-Requirements: Python 3.13
+Windows / VS Code recommended
+
+Create a virtual environment:
 
 py -3.13 -m venv .venv
+Activate it:
+
 .\.venv\Scripts\Activate.ps1
+Install dependencies:
+
 python -m pip install -r requirements.txt
 Running BizLens
-python -m streamlit run app.py
+Start the application:
 
-Or on Windows, run:
+python -m streamlit run app.py
+Or use the Windows launcher:
 
 run_bizlens.bat
-
-After launching, either upload your own evidence or use the included demo workspace.
+Once launched, upload your own business evidence or use the included demo workspace.
 
 Optional AI Configuration
+BizLens can run without an AI API key.
 
-BizLens works without an AI API key.
+Core calculations, profiling, charts, data quality checks, and structured analysis are handled locally.
 
-Local Python handles:
-
-Data profiling
-
-KPI calculations
-
-Charts
-
-Evidence extraction
-
-Data quality checks
-
-Structured analysis
-
-AI is optional and is used for natural-language synthesis.
+AI is optional and can be used for natural-language synthesis.
 
 Gemini
-
 Create a .env file:
 
 GEMINI_API_KEY=your_api_key_here
 OpenAI
 $env:OPENAI_API_KEY="your-api-key"
-
 Never commit real API keys to the repository.
 
 Working With Your Data
+Upload structured datasets and supporting business documents through the application.
 
-Upload structured data and supporting business documents through the application.
+Multiple datasets can be connected to the workspace, with an active dataset selected for analysis.
 
-If multiple datasets are uploaded, the active dataset can be selected from the workspace. Evidence remains connected across the different analysis stages.
+The connected evidence remains available across the different stages of the workflow.
 
 Testing
-
 Run the basic validation:
 
 python -m compileall -q .
 python tests\smoke_test.py
-
-Or run the complete test suite:
+Run the complete test suite:
 
 python run_tests.py
 Data Quality
-
 BizLens identifies potential:
 
 Missing values
@@ -467,18 +282,18 @@ Inconsistent fields
 
 Potential outliers
 
-Data quality issues
+Other data quality issues
 
-The application does not silently modify source data. Any imputation, deletion, or treatment should be reviewed against the business context.
-
-Evidence Principle
-
-A signal is not automatically a root cause.
-
-BizLens keeps observed trends, calculated metrics, document evidence, and hypotheses separate. It helps identify what should be investigated without presenting an unvalidated explanation as a confirmed cause.
+The source data is not silently modified. Any imputation, deletion, or treatment should be reviewed against the business context.
 
 Project Status
-
 Version: 4.5.0
 
-BizLens is a decision-support workspace designed to support structured analysis, investigation, recommendations, and professional Business Analysis documentation.
+BizLens is a portfolio project demonstrating how business evidence can be connected to structured analysis, investigation, recommendations, and professional Business Analysis documentation.
+
+Author
+Priyanka Karyampudi
+
+GitHub Repository
+
+Evidence before assumptions. Analysis before conclusions. Validation before action.
