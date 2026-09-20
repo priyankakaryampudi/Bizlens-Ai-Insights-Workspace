@@ -56,7 +56,7 @@ BizLens brings these sources into **one connected workflow**, so analysis, inves
 
 ## 🎥 Demo
 
-[▶️ Watch the BizLens Demo](<video src="./demo.mp4" controls width="100%" BizLens_compressed.mp4></video>)
+[▶️ Watch the BizLens Demo](<video src="./demo.mp4" controls width="100%" https://github.com/priyankakaryampudi/Bizlens-Ai-Insights-Workspace/blob/main/BizLens_compressed.mp4></video>)
 
 ---
 
