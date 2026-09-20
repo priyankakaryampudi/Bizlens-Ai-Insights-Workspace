@@ -56,12 +56,17 @@ BizLens brings these sources into **one connected workflow**, so analysis, inves
 
 ## 🖼️ Screenshots
 
-| Workspace | Data & Insights | Investigation |
-|:---:|:---:|:---:|
-| ![Workspace](<img width="1915" height="914" alt="BizLens_Workspace" src="https://github.com/user-attachments/assets/387d6cb9-04a6-4028-9301-2efe83a2ac50" />
-) | ![Data & Insights](<img width="1916" height="907" alt="BizLens_Data and Insights 2" src="https://github.com/user-attachments/assets/e0fd641c-778c-41cf-88d2-1081cc762820" />
-) | ![Investigation](<img width="1919" height="909" alt="BizLens_Investigation" src="https://github.com/user-attachments/assets/aa3385d7-3b62-4368-b123-d73f9e8adbd8" />
-) |
+### Workspace
+
+<img src="https://github.com/user-attachments/assets/387d6cb9-04a6-4028-9301-2efe83a2ac50" width="100%">
+
+### Data & Insights
+
+<img src="https://github.com/user-attachments/assets/e0fd641c-778c-41cf-88d2-1081cc762820" width="100%">
+
+### Investigation
+
+<img src="https://github.com/user-attachments/assets/aa3385d7-3b62-4368-b123-d73f9e8adbd8" width="100%">
 
 ---
 
