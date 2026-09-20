@@ -61,6 +61,7 @@ BizLens brings these sources into **one connected workflow**, so analysis, inves
 <img src="https://github.com/user-attachments/assets/387d6cb9-04a6-4028-9301-2efe83a2ac50" width="100%">
 
 ### Data & Insights
+<img src="https://github.com/user-attachments/assets/da7757a8-4417-4128-9cbf-af5e3129625f" width="100%">
 
 <img src="https://github.com/user-attachments/assets/e0fd641c-778c-41cf-88d2-1081cc762820" width="100%">
 
