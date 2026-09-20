@@ -10,7 +10,7 @@ from .analytics import (
 try:
     from dotenv import load_dotenv
     import pathlib as _pathlib
-    load_dotenv(_pathlib.Path(__file__).resolve().parent.parent / '.env')  # explicit: always find the project's own .env
+    load_dotenv(_pathlib.Path(__file__).resolve().parent.parent / '.env', override=True)  # explicit: always find the project's own .env
     load_dotenv()  # fallback: also honor a .env in the current working directory
 except Exception:
     pass
@@ -36,10 +36,15 @@ def _soften_causal_language(text):
     it with association language unless the sentence already hedges."""
     if not text:
         return text
-    sentences = re.split(r'(?<=[.!?])\s+', text)
+    # Split into sentences/lines but KEEP the separators, so bullets, line breaks
+    # and blank lines in the answer survive the softening pass.
+    parts = re.split(r'(\n+|(?<=[.!?])[ \t]+)', text)
     changed = False
     out = []
-    for s in sentences:
+    for i, s in enumerate(parts):
+        if i % 2 == 1:  # separator
+            out.append(s)
+            continue
         low = s.lower()
         if any(h in low for h in _CAUSAL_HEDGES):
             out.append(s)
@@ -50,7 +55,7 @@ def _soften_causal_language(text):
                 new_s = pat.sub(repl, new_s)
                 changed = True
         out.append(new_s)
-    result = ' '.join(out)
+    result = ''.join(out)
     if changed:
         result += '\n\n_Causal language above was automatically softened to reflect an observed association rather than proven causation._'
     return result
@@ -71,8 +76,10 @@ def _flag_unsupported_numbers(text, context):
             return round(float(n.replace(',', '')), 2)
         except ValueError:
             return None
-    ctx_nums = {v for v in (_norm(n) for n in re.findall(r'\d[\d,]*(?:\.\d+)?', context)) if v is not None}
-    ans_raw = re.findall(r'\d[\d,]*(?:\.\d+)?', text)
+    num_re = r'\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?'
+    old_re = r'\d[\d,]*(?:\.\d+)?'
+    ctx_nums = {v for v in (_norm(n) for n in re.findall(num_re, context) + re.findall(old_re, context)) if v is not None}
+    ans_raw = re.findall(num_re, text)
     unsupported = sorted({n for n in ans_raw if len(n.replace(',', '')) > 2 and _norm(n) not in ctx_nums})
     if unsupported:
         return text + f"\n\n_Note: the following figures could not be matched against the retrieved evidence context and should be verified before use: {', '.join(unsupported[:5])}._"
@@ -118,7 +125,7 @@ def get_api_key():
     _, session_key = _session_ai()
     for candidate in (session_key, os.getenv('GEMINI_API_KEY'), os.getenv('BIZLENS_API_KEY'), os.getenv('OPENAI_API_KEY')):
         if _looks_like_real_key(candidate):
-            return candidate
+            return candidate.strip().strip('\'"')
     return None
 
 def ai_provider():
@@ -204,7 +211,7 @@ def _gemini(question, context):
     # A shorter timeout that fails fast into local evidence mode beats a long
     # silent wait for a slow/stuck request - the person just sees an answer
     # either way, so 30s of dead air before falling back served no purpose.
-    client = genai.Client(api_key=key, vertexai=False, http_options=types.HttpOptions(timeout=15000))
+    client = genai.Client(api_key=key, vertexai=False, http_options=types.HttpOptions(timeout=30000))
     model = os.getenv('BIZLENS_MODEL', 'gemini-3.7-flash')
     prompt = f'''You are BizLens, a senior Business Analyst copilot.
 Answer the user's exact question from the workspace evidence. Do not turn every question into a generic business summary.
@@ -227,13 +234,30 @@ WORKSPACE EVIDENCE:
 
 USER QUESTION:
 {question}'''
-    response = client.models.generate_content(
-        model=model, contents=prompt,
-        config=types.GenerateContentConfig(max_output_tokens=500, temperature=0.2),
-    )
+    response = None
+    last_exc = None
+    for _model in dict.fromkeys([model, 'gemini-flash-latest']):
+        try:
+            response = client.models.generate_content(
+                model=_model, contents=prompt,
+                config=types.GenerateContentConfig(max_output_tokens=2048, temperature=0.2),
+            )
+            break
+        except Exception as exc:
+            last_exc = exc
+            if '404' in str(exc) or 'not found' in str(exc).lower():
+                continue  # model name retired or unavailable: try the next one
+            raise
+    if response is None:
+        raise last_exc
     text = (response.text or '').strip()
     if not text:
         raise RuntimeError('Gemini returned an empty answer')
+    try:
+        if 'MAX_TOKENS' in str(response.candidates[0].finish_reason):
+            raise RuntimeError('Gemini answer was cut off (MAX_TOKENS)')
+    except (AttributeError, IndexError, TypeError):
+        pass
     return text
 
 
@@ -250,6 +274,38 @@ QUESTION:
 {question}'''
     r = client.responses.create(model=model, input=prompt)
     return r.output_text.strip()
+
+
+def _looks_incomplete(text):
+    """True when an AI answer was cut off, e.g. it ends on an intro line or an empty bullet."""
+    t = (text or '').strip()
+    if not t:
+        return True
+    last = t.splitlines()[-1].strip()
+    return bool(re.fullmatch(r'[-*\u2022\d.\s]*', last)) or t.endswith(':')
+
+
+def display_answer(text):
+    """Clean an answer for display: one direct answer, with no internal labels or notes."""
+    if not text:
+        return text
+    out = []
+    for line in str(text).splitlines():
+        low = line.strip().lower()
+        if low.startswith('**evidence:**'):
+            continue
+        if low.startswith('**evidence boundary'):
+            continue
+        if low.startswith('_causal language above was automatically softened'):
+            continue
+        # heading-only lines such as "**Direct answer**" or "**Direct answer: known unknowns**"
+        if re.fullmatch(r'\*\*direct answer(?:: [^*]*)?\*\*', low):
+            continue
+        # "**Direct answer:** text" -> "text"
+        line = re.sub(r'^(\s*)\*\*(?:Direct answer|Evidence check):\*\*\s*', r'\1', line, flags=re.IGNORECASE)
+        out.append(line)
+    cleaned = re.sub(r'\n{3,}', '\n\n', '\n'.join(out)).strip()
+    return cleaned or 'No answer could be produced from the connected evidence.'
 
 
 def answer_with_ai(question, context):
@@ -414,7 +470,8 @@ def local_answer(question, df=None, artifacts=None, doc_signals=None):
             parts = ['Not enough connected evidence yet to recommend a specific action - upload a dataset or business document first.']
         lines = ['**Direct answer: recommended next steps**'] + parts + ['**Decision required:** Confirm which investigation to prioritize before committing to a corrective action.']
     elif df is not None and _any_word(q, ['duplicate', 'missing', 'quality', 'outlier', 'suspicious']):
-        lines = ['**Direct answer**'] + [f'- {x}' for x in data_quality_findings(df)[:10]]
+        _dq = data_quality_findings(df)[:10]
+        lines = ['**Direct answer**'] + ([f'- {x}' for x in _dq] if _dq else ['No duplicate, missing-value or outlier issue was detected in the connected dataset.'])
     elif df is not None and _any_word(q, ['why', 'reason', 'driver', 'contributor', 'affect', 'impact', 'concentrat']):
         # "most/least affected/impacted" is a causal/contribution question, not a plain
         # ranking request - it must not fall into the plain superlative branch below,
@@ -511,6 +568,14 @@ def local_answer(question, df=None, artifacts=None, doc_signals=None):
     return '\n\n'.join(lines[:15])
 
 
+def _set_ai_status(msg):
+    try:
+        import streamlit as st
+        st.session_state['_ai_status'] = msg
+    except Exception:
+        pass
+
+
 def _record_ai_failure(exc):
     """Keep the diagnostic available for the developer without ever surfacing
     it in the answer text the end user sees (they asked AI synthesis to fail
@@ -518,6 +583,8 @@ def _record_ai_failure(exc):
     try:
         import streamlit as st
         st.session_state['_ai_last_error'] = _diagnose_ai_error(exc)
+        st.session_state['_ai_status'] = 'AI was not used: ' + _diagnose_ai_error(exc)
+        print('[BizLens] AI fallback ->', _diagnose_ai_error(exc), flush=True)  # terminal only, never shown in the app
     except Exception:
         pass
 
@@ -551,11 +618,14 @@ def answer(question, artifacts, df, doc_signals):
     context = _evidence_context(artifacts, df, question, doc_signals)
     if ai_available():
         try:
-            return validate_answer(answer_with_ai(question, context), context)
+            ai_text = answer_with_ai(question, context)
+            if _looks_incomplete(ai_text):
+                raise RuntimeError('AI answer looked incomplete')
+            return validate_answer(ai_text, context)
         except Exception as exc:
             _record_ai_failure(exc)
             return local_answer(question, df, artifacts, doc_signals)
-    return validate_answer(local_answer(question, df, artifacts, doc_signals), context)
+    return validate_answer(local_answer(question, df, artifacts, doc_signals))
 
 # --- BizLens query router: deterministic facts first, synthesis second ---
 _INTENT_TYPES = ['FACT_LOOKUP','COMPARISON','TREND','DIAGNOSTIC','ROOT_CAUSE','RECOMMENDATION','REQUIREMENT','RISK','STAKEHOLDER','KPI','DATA_QUALITY','DOCUMENT_QUERY','GENERAL_WORKSPACE']
@@ -610,21 +680,26 @@ def routed_answer(question, artifacts, df, doc_signals, objective='', investigat
         if objective: context += '\n\nWORKSPACE OBJECTIVE:\n'+objective
         if investigations: context += '\n\nSAVED INVESTIGATIONS:\n'+str(investigations[:3])
         try:
-            return validate_answer(answer_with_ai(question,context), context)
+            ai_text = answer_with_ai(question, context)
+            if _looks_incomplete(ai_text):
+                raise RuntimeError('AI answer looked incomplete')
+            _set_ai_status('AI answered (' + str(ai_provider()) + ').')
+            return validate_answer(ai_text, context)
         except Exception as exc:
             _record_ai_failure(exc)
             deterministic=local_answer(question,df,artifacts,doc_signals)
-            return validate_answer(deterministic, context)
+            return validate_answer(deterministic)
+    _set_ai_status('No API key detected: add GEMINI_API_KEY to the .env file in the BizLens folder, save it, and restart the app.')
     context=_evidence_context(artifacts,df,question,doc_signals)
     deterministic=local_answer(question,df,artifacts,doc_signals)
     if route=='data':
-        return validate_answer(deterministic, context)
+        return validate_answer(deterministic)
     # Only pad with a broader evidence dump when the deterministic answer genuinely
     # found nothing - not stacked on top of an answer that already worked, which
     # is what was drowning real answers in unrelated category dumps before.
     weak = deterministic.startswith('I could not find enough evidence')
     if not weak:
-        return validate_answer(deterministic, context)
+        return validate_answer(deterministic)
     extra=[]
     for key in ['requirements','decisions','risks','questions']:
         vals=(doc_signals or {}).get(key,[])[:3]
@@ -635,4 +710,4 @@ def routed_answer(question, artifacts, df, doc_signals, objective='', investigat
     if recommendations:
         titles=[x.get('title','Recommendation') for x in recommendations[:3]]
         extra.append('**Related recommendations:**\n'+'\n'.join('- '+x for x in titles))
-    return validate_answer(deterministic + ('\n\n' + '\n\n'.join(extra) if extra else ''), context)
+    return validate_answer(deterministic + ('\n\n' + '\n\n'.join(extra) if extra else ''))

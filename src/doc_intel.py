@@ -85,9 +85,50 @@ def _extract_stakeholders(ss):
                 found.append(label)
     return list(dict.fromkeys(found))[:15]
 
+def _word_count(s):
+    return len(re.findall(r"[A-Za-z][A-Za-z'\-]*", s))
+
+
+def _bucket(sl):
+    for key in _CATEGORY_PRIORITY:
+        if key == 'questions':
+            continue
+        if any(t in sl for t in CATEGORIES[key]):
+            return key
+    return None
+
+
+def _risk_sections(ss):
+    """A short line such as 'Known business concerns.' is a heading, not a risk. The real
+    risks are the plain sentences listed under it, so keep those and drop the heading."""
+    headings, items = set(), set()
+    for i, s in enumerate(ss):
+        if s.strip().endswith('?') or _word_count(s) > 4 or _bucket(s.lower()) != 'risks':
+            continue
+        found = []
+        j = i + 1
+        while j < len(ss) and len(found) < 6:
+            nxt = ss[j]
+            if nxt.strip().endswith('?') or _word_count(nxt) <= 4:
+                break
+            if _bucket(nxt.lower()) in ('requirements', 'business_rules', 'decisions', 'actions'):
+                break
+            found.append(j)
+            j += 1
+        if found:
+            headings.add(i)
+            items.update(found)
+    return headings, items
+
+
 def extract_signals(text):
     ss = sentences(text); out = {k: [] for k in CATEGORIES}
-    for s in ss:
+    risk_headings, risk_items = _risk_sections(ss)
+    for idx, s in enumerate(ss):
+        if idx in risk_headings:
+            continue
+        if idx in risk_items:
+            out['risks'].append(s); continue
         sl = s.lower()
         if s.strip().endswith('?'):
             # A question is a question, full stop - even if it happens to contain a

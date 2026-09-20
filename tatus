@@ -1,0 +1,485 @@
+warning: in the working copy of 'src/ai.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/doc_intel.py', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/pages/1_Ask.py b/pages/1_Ask.py[m
+[1mindex b5ba46b..9f600b4 100644[m
+[1m--- a/pages/1_Ask.py[m
+[1m+++ b/pages/1_Ask.py[m
+[36m@@ -1,33 +1,16 @@[m
+ import streamlit as st[m
+[31m-from src.styles import hero, section_head[m
+[31m-from src.ai import routed_answer, ai_provider, classify_question, classify_intent, ai_status[m
+[32m+[m[32mfrom src.styles import hero[m
+[32m+[m[32mfrom src.ai import routed_answer, display_answer[m
+ from src.intelligence import build_evidence_graph[m
+ [m
+[31m-hero('ASK','Ask BizLens','BizLens routes each question to the right evidence: Python for calculations, documents for business evidence, and synthesis only where interpretation is needed.')[m
+[32m+[m[32mhero('ASK','Ask BizLens','Ask a question about your business data and documents.')[m
+ if not st.session_state.artifacts: st.info('Upload business evidence on Home first.'); st.stop()[m
+ st.session_state.evidence_graph=build_evidence_graph(st.session_state.artifacts,st.session_state.df,st.session_state.doc_signals,st.session_state.get('business_objective',''))[m
+[31m-section_head('Ask a business question', 'Get an evidence-grounded answer from the connected workspace.')[m
+ [m
+[31m-q=st.text_area('Your question',placeholder='Ask about performance, requirements, risks, stakeholders, investigations or recommendations.',height=105,key='ask_question')[m
+[31m-status=ai_status()[m
+[31m-st.caption(f"Answer engine: Python calculations + workspace evidence. AI synthesis: {status['provider']+' (falls back to local evidence automatically if unavailable)' if status['configured'] else 'not configured (safe local mode active)'}.")[m
+[31m-if q.strip(): st.caption('Question type: '+classify_intent(q,st.session_state.df,st.session_state.doc_signals).replace('_',' ').title()+'  ·  Route: '+classify_question(q,st.session_state.df,st.session_state.doc_signals).replace('_',' ').title())[m
+[32m+[m[32mq=st.text_area('Your question',placeholder='Ask about performance, requirements, risks, stakeholders, investigations or recommendations.',height=105,key='ask_question',label_visibility='collapsed')[m
+ if st.button('Ask BizLens',type='primary',disabled=not q.strip(),width='stretch'):[m
+[31m-    with st.spinner('Checking the connected evidence...'):[m
+[32m+[m[32m    with st.spinner('Thinking...'):[m
+         ans=routed_answer(q.strip(),st.session_state.artifacts,st.session_state.df,st.session_state.doc_signals,st.session_state.get('business_objective',''),st.session_state.get('investigations',[]),st.session_state.get('recommendations_v2',[]))[m
+     st.session_state.last_answer=ans; st.session_state.chat.append({'question':q.strip(),'answer':ans})[m
+ if st.session_state.get('last_answer'):[m
+[31m-    section_head('Answer')[m
+[31m-    st.markdown(st.session_state.last_answer)[m
+[31m-    st.markdown('<div class="evidence-used"><b>Evidence boundary</b><br>Calculated facts and documented statements are separated from hypotheses. Association is not proof of causation.</div>', unsafe_allow_html=True)[m
+[31m-    if st.session_state.get('evidence_register'):[m
+[31m-        matched = [][m
+[31m-        qtext = st.session_state.chat[-1]['question'] if st.session_state.chat else ''[m
+[31m-        for item in st.session_state.evidence_register[:8]:[m
+[31m-            if item.get('evidence_id') and item['evidence_id'] not in matched:[m
+[31m-                matched.append(item['evidence_id'])[m
+[31m-        if matched:[m
+[31m-            st.markdown('<div class="evidence-used"><b>Workspace evidence available</b><br>' + ' '.join(f'<span class="pill">{x}</span>' for x in matched[:6]) + '</div>', unsafe_allow_html=True)[m
+[31m-if st.session_state.chat:[m
+[31m-    with st.expander('Recent workspace questions'):[m
+[31m-        for x in reversed(st.session_state.chat[-5:]): st.markdown(f'**Q:** {x["question"]}\n\n{x["answer"]}')[m
+[32m+[m[32m    st.markdown(display_answer(st.session_state.last_answer))[m
+\ No newline at end of file[m
+[1mdiff --git a/pages/home.py b/pages/home.py[m
+[1mindex 9f1c448..ff8ae48 100644[m
+[1m--- a/pages/home.py[m
+[1m+++ b/pages/home.py[m
+[36m@@ -10,14 +10,16 @@[m [mfrom src.workspace import refresh_workspace[m
+ hero([m
+     'BIZLENS',[m
+     'Business Intelligence Workspace',[m
+[31m-    'Connect business evidence once. BizLens carries the evidence through analysis, investigation and decision-making without losing the thread.'[m
+[32m+[m[32m    'Connect business evidence once. BizLens carries it through analysis, investigation and decision-making.'[m
+ )[m
+ [m
+[32m+[m[32m# ---------------------------------------------------------------- evidence uploader[m
+[32m+[m[32m# Kept in the same place in every state (empty or connected) so multiple files can always be added.[m
+ is_empty = not st.session_state.artifacts[m
+ if is_empty:[m
+     section_head('Start your workspace', 'Upload the dataset and business documents you already use. BizLens keeps them connected across the workflow.')[m
+ else:[m
+[31m-    section_head('Add evidence', 'New datasets and documents are automatically carried into the existing analysis.')[m
+[32m+[m[32m    section_head('Add evidence')[m
+ [m
+ files = st.file_uploader([m
+     'Add business evidence (data or documents)',[m
+[36m@@ -37,6 +39,7 @@[m [mif is_empty:[m
+         st.rerun()[m
+     st.stop()[m
+ [m
+[32m+[m[32m# ---------------------------------------------------------------- build the workspace context[m
+ sig, flags, _ = build_context(st.session_state.artifacts)[m
+ st.session_state.doc_signals = sig[m
+ obj = st.session_state.get('business_objective', '')[m
+[36m@@ -61,27 +64,30 @@[m [mdf = st.session_state.df[m
+ metric = guess_metric(df, obj) if df is not None else None[m
+ dimension = guess_dimension(df, obj) if df is not None else None[m
+ [m
+[31m-section_head('Workspace snapshot', 'A quick orientation, not another dashboard.')[m
+[32m+[m[32m# ---------------------------------------------------------------- 1. overview numbers (same look as Data & Insights)[m
+[32m+[m[32msection_head('Workspace overview')[m
+ source_count = len(st.session_state.artifacts)[m
+ dataset_count = len(st.session_state.datasets)[m
+ evidence_count = sum(len(v) for v in sig.values() if isinstance(v, list))[m
+[31m-status = 'Ready to investigate' if df is not None else 'Evidence connected'[m
+ if st.session_state.get('recommendations_v2'):[m
+     status = 'Decision-ready'[m
+ elif st.session_state.get('investigations'):[m
+[31m-    status = 'Investigation in progress'[m
+[32m+[m[32m    status = 'Investigating'[m
+[32m+[m[32melif df is not None:[m
+[32m+[m[32m    status = 'Ready'[m
+[32m+[m[32melse:[m
+[32m+[m[32m    status = 'Connected'[m
+ [m
+[31m-cards = [[m
+[31m-    ('Sources connected', str(source_count), 'documents + datasets'),[m
+[31m-    ('Structured datasets', str(dataset_count), 'available for analysis'),[m
+[31m-    ('Evidence items', str(evidence_count), 'extracted from connected sources'),[m
+[31m-    ('Workflow status', status, 'current workspace stage'),[m
+[32m+[m[32mkpis = [[m
+[32m+[m[32m    ('Sources connected', str(source_count), 'Documents and datasets in this workspace'),[m
+[32m+[m[32m    ('Structured datasets', str(dataset_count), 'Datasets available for analysis'),[m
+[32m+[m[32m    ('Evidence items', str(evidence_count), 'Requirements, risks, decisions and questions found in documents'),[m
+[32m+[m[32m    ('Workflow status', status, 'Where the workspace is in the analysis workflow'),[m
+ ][m
+[31m-cols = st.columns(4)[m
+[31m-for col, (label, value, note) in zip(cols, cards):[m
+[31m-    with col:[m
+[31m-        st.markdown(f'<div class="mini-card"><div class="label">{label}</div><div class="value">{value}</div><div class="note">{note}</div></div>', unsafe_allow_html=True)[m
+[32m+[m[32mfor col, (label, value, note) in zip(st.columns(4), kpis):[m
+[32m+[m[32m    col.metric(label, value, help=note, border=True)[m
+ [m
+[32m+[m[32m# ---------------------------------------------------------------- 2. objective[m
+ section_head('What are we trying to understand?')[m
+ if obj:[m
+     st.markdown(f'<div class="finding"><b>{obj}</b></div>', unsafe_allow_html=True)[m
+[36m@@ -96,30 +102,33 @@[m [melse:[m
+     st.markdown(f'<div class="finding"><b>{(ctx.get("objectives") or ["Clarify the business objective."])[0]}</b></div>', unsafe_allow_html=True)[m
+     st.caption('Objective status: Evidence-derived')[m
+ [m
+[31m-objective = st.text_area([m
+[31m-    'Set or refine the objective',[m
+[31m-    value=obj,[m
+[31m-    placeholder='Example: Why did revenue weaken in Q4 and what should management validate next?',[m
+[31m-    height=80,[m
+[31m-    label_visibility='collapsed',[m
+[31m-)[m
+[31m-if objective != obj:[m
+[31m-    st.session_state.business_objective = objective.strip()[m
+[31m-    refresh_workspace()[m
+[31m-    st.rerun()[m
+[32m+[m[32mwith st.expander('Set or refine the objective'):[m
+[32m+[m[32m    objective = st.text_area([m
+[32m+[m[32m        'Set or refine the objective',[m
+[32m+[m[32m        value=obj,[m
+[32m+[m[32m        placeholder='Example: Why did revenue weaken in Q4 and what should management validate next?',[m
+[32m+[m[32m        height=80,[m
+[32m+[m[32m        label_visibility='collapsed',[m
+[32m+[m[32m    )[m
+[32m+[m[32m    if objective != obj:[m
+[32m+[m[32m        st.session_state.business_objective = objective.strip()[m
+[32m+[m[32m        refresh_workspace()[m
+[32m+[m[32m        st.rerun()[m
+ [m
+[31m-section_head('Current workspace status', 'BizLens keeps the home view focused on orientation. Detailed numbers belong in Data & Insights; causal reasoning belongs in Investigation.')[m
+[32m+[m[32m# ---------------------------------------------------------------- 3. current signal[m
+[32m+[m[32msection_head('Current business signal')[m
+ if df is not None:[m
+     brief = investigation_brief(df, sig, obj)[m
+     finding = brief.get('executive_finding', '')[m
+[31m-    st.markdown(f'<div class="answer-card"><div class="answer-head">Current business signal</div><div class="answer-body">{finding}</div></div>', unsafe_allow_html=True)[m
+[32m+[m[32m    st.markdown(f'<div class="answer-card"><div class="answer-body">{finding}</div></div>', unsafe_allow_html=True)[m
+ else:[m
+     st.markdown('<div class="finding">The evidence is connected, but a structured dataset is needed for quantified analysis.</div>', unsafe_allow_html=True)[m
+ [m
+ if ctx.get('contradiction'):[m
+     st.markdown(f'<div class="validation-card"><b>Validation needed</b><br>{ctx["contradiction"]}</div>', unsafe_allow_html=True)[m
+ [m
+[31m-section_head('Recommended next action', 'One concrete move based on the current workspace state.')[m
+[32m+[m[32m# ---------------------------------------------------------------- 4. next action[m
+[32m+[m[32msection_head('Recommended next action')[m
+ action = next_best_action([m
+     st.session_state.artifacts,[m
+     ctx,[m
+[36m@@ -132,8 +141,10 @@[m [mst.markdown([m
+     unsafe_allow_html=True,[m
+ )[m
+ if action.get('page'):[m
+[31m-    st.page_link(action['page'], label=action['button'], width='stretch')[m
+[32m+[m[32m    if st.button(action['button'], type='primary', width='stretch', key='home_next_action'):[m
+[32m+[m[32m        st.switch_page(action['page'])[m
+ [m
+[32m+[m[32m# ---------------------------------------------------------------- 5. progress[m
+ section_head('Analysis progress')[m
+ cols = st.columns(5)[m
+ for col, (stage, label, status_text, done) in zip([m
+[36m@@ -147,4 +158,4 @@[m [mfor col, (stage, label, status_text, done) in zip([m
+ ):[m
+     with col:[m
+         st.markdown(f"{'✓' if done else '○'} **{stage}**")[m
+[31m-        st.caption(f'{label} — {status_text}')[m
+[32m+[m[32m        st.caption(f'{label} — {status_text}')[m
+\ No newline at end of file[m
+[1mdiff --git a/src/ai.py b/src/ai.py[m
+[1mindex 0a05aaf..2680bed 100644[m
+[1m--- a/src/ai.py[m
+[1m+++ b/src/ai.py[m
+[36m@@ -10,7 +10,7 @@[m [mfrom .analytics import ([m
+ try:[m
+     from dotenv import load_dotenv[m
+     import pathlib as _pathlib[m
+[31m-    load_dotenv(_pathlib.Path(__file__).resolve().parent.parent / '.env')  # explicit: always find the project's own .env[m
+[32m+[m[32m    load_dotenv(_pathlib.Path(__file__).resolve().parent.parent / '.env', override=True)  # explicit: always find the project's own .env[m
+     load_dotenv()  # fallback: also honor a .env in the current working directory[m
+ except Exception:[m
+     pass[m
+[36m@@ -36,10 +36,15 @@[m [mdef _soften_causal_language(text):[m
+     it with association language unless the sentence already hedges."""[m
+     if not text:[m
+         return text[m
+[31m-    sentences = re.split(r'(?<=[.!?])\s+', text)[m
+[32m+[m[32m    # Split into sentences/lines but KEEP the separators, so bullets, line breaks[m
+[32m+[m[32m    # and blank lines in the answer survive the softening pass.[m
+[32m+[m[32m    parts = re.split(r'(\n+|(?<=[.!?])[ \t]+)', text)[m
+     changed = False[m
+     out = [][m
+[31m-    for s in sentences:[m
+[32m+[m[32m    for i, s in enumerate(parts):[m
+[32m+[m[32m        if i % 2 == 1:  # separator[m
+[32m+[m[32m            out.append(s)[m
+[32m+[m[32m            continue[m
+         low = s.lower()[m
+         if any(h in low for h in _CAUSAL_HEDGES):[m
+             out.append(s)[m
+[36m@@ -50,7 +55,7 @@[m [mdef _soften_causal_language(text):[m
+                 new_s = pat.sub(repl, new_s)[m
+                 changed = True[m
+         out.append(new_s)[m
+[31m-    result = ' '.join(out)[m
+[32m+[m[32m    result = ''.join(out)[m
+     if changed:[m
+         result += '\n\n_Causal language above was automatically softened to reflect an observed association rather than proven causation._'[m
+     return result[m
+[36m@@ -71,8 +76,10 @@[m [mdef _flag_unsupported_numbers(text, context):[m
+             return round(float(n.replace(',', '')), 2)[m
+         except ValueError:[m
+             return None[m
+[31m-    ctx_nums = {v for v in (_norm(n) for n in re.findall(r'\d[\d,]*(?:\.\d+)?', context)) if v is not None}[m
+[31m-    ans_raw = re.findall(r'\d[\d,]*(?:\.\d+)?', text)[m
+[32m+[m[32m    num_re = r'\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?'[m
+[32m+[m[32m    old_re = r'\d[\d,]*(?:\.\d+)?'[m
+[32m+[m[32m    ctx_nums = {v for v in (_norm(n) for n in re.findall(num_re, context) + re.findall(old_re, context)) if v is not None}[m
+[32m+[m[32m    ans_raw = re.findall(num_re, text)[m
+     unsupported = sorted({n for n in ans_raw if len(n.replace(',', '')) > 2 and _norm(n) not in ctx_nums})[m
+     if unsupported:[m
+         return text + f"\n\n_Note: the following figures could not be matched against the retrieved evidence context and should be verified before use: {', '.join(unsupported[:5])}._"[m
+[36m@@ -118,7 +125,7 @@[m [mdef get_api_key():[m
+     _, session_key = _session_ai()[m
+     for candidate in (session_key, os.getenv('GEMINI_API_KEY'), os.getenv('BIZLENS_API_KEY'), os.getenv('OPENAI_API_KEY')):[m
+         if _looks_like_real_key(candidate):[m
+[31m-            return candidate[m
+[32m+[m[32m            return candidate.strip().strip('\'"')[m
+     return None[m
+ [m
+ def ai_provider():[m
+[36m@@ -204,7 +211,7 @@[m [mdef _gemini(question, context):[m
+     # A shorter timeout that fails fast into local evidence mode beats a long[m
+     # silent wait for a slow/stuck request - the person just sees an answer[m
+     # either way, so 30s of dead air before falling back served no purpose.[m
+[31m-    client = genai.Client(api_key=key, vertexai=False, http_options=types.HttpOptions(timeout=15000))[m
+[32m+[m[32m    client = genai.Client(api_key=key, vertexai=False, http_options=types.HttpOptions(timeout=30000))[m
+     model = os.getenv('BIZLENS_MODEL', 'gemini-3.7-flash')[m
+     prompt = f'''You are BizLens, a senior Business Analyst copilot.[m
+ Answer the user's exact question from the workspace evidence. Do not turn every question into a generic business summary.[m
+[36m@@ -227,13 +234,30 @@[m [mWORKSPACE EVIDENCE:[m
+ [m
+ USER QUESTION:[m
+ {question}'''[m
+[31m-    response = client.models.generate_content([m
+[31m-        model=model, contents=prompt,[m
+[31m-        config=types.GenerateContentConfig(max_output_tokens=500, temperature=0.2),[m
+[31m-    )[m
+[32m+[m[32m    response = None[m
+[32m+[m[32m    last_exc = None[m
+[32m+[m[32m    for _model in dict.fromkeys([model, 'gemini-flash-latest']):[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            response = client.models.generate_content([m
+[32m+[m[32m                model=_model, contents=prompt,[m
+[32m+[m[32m                config=types.GenerateContentConfig(max_output_tokens=2048, temperature=0.2),[m
+[32m+[m[32m            )[m
+[32m+[m[32m            break[m
+[32m+[m[32m        except Exception as exc:[m
+[32m+[m[32m            last_exc = exc[m
+[32m+[m[32m            if '404' in str(exc) or 'not found' in str(exc).lower():[m
+[32m+[m[32m                continue  # model name retired or unavailable: try the next one[m
+[32m+[m[32m            raise[m
+[32m+[m[32m    if response is None:[m
+[32m+[m[32m        raise last_exc[m
+     text = (response.text or '').strip()[m
+     if not text:[m
+         raise RuntimeError('Gemini returned an empty answer')[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        if 'MAX_TOKENS' in str(response.candidates[0].finish_reason):[m
+[32m+[m[32m            raise RuntimeError('Gemini answer was cut off (MAX_TOKENS)')[m
+[32m+[m[32m    except (AttributeError, IndexError, TypeError):[m
+[32m+[m[32m        pass[m
+     return text[m
+ [m
+ [m
+[36m@@ -252,6 +276,38 @@[m [mQUESTION:[m
+     return r.output_text.strip()[m
+ [m
+ [m
+[32m+[m[32mdef _looks_incomplete(text):[m
+[32m+[m[32m    """True when an AI answer was cut off, e.g. it ends on an intro line or an empty bullet."""[m
+[32m+[m[32m    t = (text or '').strip()[m
+[32m+[m[32m    if not t:[m
+[32m+[m[32m        return True[m
+[32m+[m[32m    last = t.splitlines()[-1].strip()[m
+[32m+[m[32m    return bool(re.fullmatch(r'[-*\u2022\d.\s]*', last)) or t.endswith(':')[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef display_answer(text):[m
+[32m+[m[32m    """Clean an answer for display: one direct answer, with no internal labels or notes."""[m
+[32m+[m[32m    if not text:[m
+[32m+[m[32m        return text[m
+[32m+[m[32m    out = [][m
+[32m+[m[32m    for line in str(text).splitlines():[m
+[32m+[m[32m        low = line.strip().lower()[m
+[32m+[m[32m        if low.startswith('**evidence:**'):[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        if low.startswith('**evidence boundary'):[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        if low.startswith('_causal language above was automatically softened'):[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        # heading-only lines such as "**Direct answer**" or "**Direct answer: known unknowns**"[m
+[32m+[m[32m        if re.fullmatch(r'\*\*direct answer(?:: [^*]*)?\*\*', low):[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        # "**Direct answer:** text" -> "text"[m
+[32m+[m[32m        line = re.sub(r'^(\s*)\*\*(?:Direct answer|Evidence check):\*\*\s*', r'\1', line, flags=re.IGNORECASE)[m
+[32m+[m[32m        out.append(line)[m
+[32m+[m[32m    cleaned = re.sub(r'\n{3,}', '\n\n', '\n'.join(out)).strip()[m
+[32m+[m[32m    return cleaned or 'No answer could be produced from the connected evidence.'[m
+[32m+[m
+[32m+[m
+ def answer_with_ai(question, context):[m
+     provider = ai_provider()[m
+     if provider == 'Gemini':[m
+[36m@@ -414,7 +470,8 @@[m [mdef local_answer(question, df=None, artifacts=None, doc_signals=None):[m
+             parts = ['Not enough connected evidence yet to recommend a specific action - upload a dataset or business document first.'][m
+         lines = ['**Direct answer: recommended next steps**'] + parts + ['**Decision required:** Confirm which investigation to prioritize before committing to a corrective action.'][m
+     elif df is not None and _any_word(q, ['duplicate', 'missing', 'quality', 'outlier', 'suspicious']):[m
+[31m-        lines = ['**Direct answer**'] + [f'- {x}' for x in data_quality_findings(df)[:10]][m
+[32m+[m[32m        _dq = data_quality_findings(df)[:10][m
+[32m+[m[32m        lines = ['**Direct answer**'] + ([f'- {x}' for x in _dq] if _dq else ['No duplicate, missing-value or outlier issue was detected in the connected dataset.'])[m
+     elif df is not None and _any_word(q, ['why', 'reason', 'driver', 'contributor', 'affect', 'impact', 'concentrat']):[m
+         # "most/least affected/impacted" is a causal/contribution question, not a plain[m
+         # ranking request - it must not fall into the plain superlative branch below,[m
+[36m@@ -511,6 +568,14 @@[m [mdef local_answer(question, df=None, artifacts=None, doc_signals=None):[m
+     return '\n\n'.join(lines[:15])[m
+ [m
+ [m
+[32m+[m[32mdef _set_ai_status(msg):[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        import streamlit as st[m
+[32m+[m[32m        st.session_state['_ai_status'] = msg[m
+[32m+[m[32m    except Exception:[m
+[32m+[m[32m        pass[m
+[32m+[m
+[32m+[m
+ def _record_ai_failure(exc):[m
+     """Keep the diagnostic available for the developer without ever surfacing[m
+     it in the answer text the end user sees (they asked AI synthesis to fail[m
+[36m@@ -518,6 +583,8 @@[m [mdef _record_ai_failure(exc):[m
+     try:[m
+         import streamlit as st[m
+         st.session_state['_ai_last_error'] = _diagnose_ai_error(exc)[m
+[32m+[m[32m        st.session_state['_ai_status'] = 'AI was not used: ' + _diagnose_ai_error(exc)[m
+[32m+[m[32m        print('[BizLens] AI fallback ->', _diagnose_ai_error(exc), flush=True)  # terminal only, never shown in the app[m
+     except Exception:[m
+         pass[m
+ [m
+[36m@@ -551,11 +618,14 @@[m [mdef answer(question, artifacts, df, doc_signals):[m
+     context = _evidence_context(artifacts, df, question, doc_signals)[m
+     if ai_available():[m
+         try:[m
+[31m-            return validate_answer(answer_with_ai(question, context), context)[m
+[32m+[m[32m            ai_text = answer_with_ai(question, context)[m
+[32m+[m[32m            if _looks_incomplete(ai_text):[m
+[32m+[m[32m                raise RuntimeError('AI answer looked incomplete')[m
+[32m+[m[32m            return validate_answer(ai_text, context)[m
+         except Exception as exc:[m
+             _record_ai_failure(exc)[m
+             return local_answer(question, df, artifacts, doc_signals)[m
+[31m-    return validate_answer(local_answer(question, df, artifacts, doc_signals), context)[m
+[32m+[m[32m    return validate_answer(local_answer(question, df, artifacts, doc_signals))[m
+ [m
+ # --- BizLens query router: deterministic facts first, synthesis second ---[m
+ _INTENT_TYPES = ['FACT_LOOKUP','COMPARISON','TREND','DIAGNOSTIC','ROOT_CAUSE','RECOMMENDATION','REQUIREMENT','RISK','STAKEHOLDER','KPI','DATA_QUALITY','DOCUMENT_QUERY','GENERAL_WORKSPACE'][m
+[36m@@ -610,21 +680,26 @@[m [mdef routed_answer(question, artifacts, df, doc_signals, objective='', investigat[m
+         if objective: context += '\n\nWORKSPACE OBJECTIVE:\n'+objective[m
+         if investigations: context += '\n\nSAVED INVESTIGATIONS:\n'+str(investigations[:3])[m
+         try:[m
+[31m-            return validate_answer(answer_with_ai(question,context), context)[m
+[32m+[m[32m            ai_text = answer_with_ai(question, context)[m
+[32m+[m[32m            if _looks_incomplete(ai_text):[m
+[32m+[m[32m                raise RuntimeError('AI answer looked incomplete')[m
+[32m+[m[32m            _set_ai_status('AI answered (' + str(ai_provider()) + ').')[m
+[32m+[m[32m            return validate_answer(ai_text, context)[m
+         except Exception as exc:[m
+             _record_ai_failure(exc)[m
+             deterministic=local_answer(question,df,artifacts,doc_signals)[m
+[31m-            return validate_answer(deterministic, context)[m
+[32m+[m[32m            return validate_answer(deterministic)[m
+[32m+[m[32m    _set_ai_status('No API key detected: add GEMINI_API_KEY to the .env file in the BizLens folder, save it, and restart the app.')[m
+     context=_evidence_context(artifacts,df,question,doc_signals)[m
+     deterministic=local_answer(question,df,artifacts,doc_signals)[m
+     if route=='data':[m
+[31m-        return validate_answer(deterministic, context)[m
+[32m+[m[32m        return validate_answer(deterministic)[m
+     # Only pad with a broader evidence dump when the deterministic answer genuinely[m
+     # found nothing - not stacked on top of an answer that already worked, which[m
+     # is what was drowning real answers in unrelated category dumps before.[m
+     weak = deterministic.startswith('I could not find enough evidence')[m
+     if not weak:[m
+[31m-        return validate_answer(deterministic, context)[m
+[32m+[m[32m        return validate_answer(deterministic)[m
+     extra=[][m
+     for key in ['requirements','decisions','risks','questions']:[m
+         vals=(doc_signals or {}).get(key,[])[:3][m
+[36m@@ -635,4 +710,4 @@[m [mdef routed_answer(question, artifacts, df, doc_signals, objective='', investigat[m
+     if recommendations:[m
+         titles=[x.get('title','Recommendation') for x in recommendations[:3]][m
+         extra.append('**Related recommendations:**\n'+'\n'.join('- '+x for x in titles))[m
+[31m-    return validate_answer(deterministic + ('\n\n' + '\n\n'.join(extra) if extra else ''), context)[m
+[32m+[m[32m    return validate_answer(deterministic + ('\n\n' + '\n\n'.join(extra) if extra else ''))[m
+\ No newline at end of file[m
+[1mdiff --git a/src/doc_intel.py b/src/doc_intel.py[m
+[1mindex dc4f265..ca96a7e 100644[m
+[1m--- a/src/doc_intel.py[m
+[1m+++ b/src/doc_intel.py[m
+[36m@@ -85,9 +85,50 @@[m [mdef _extract_stakeholders(ss):[m
+                 found.append(label)[m
+     return list(dict.fromkeys(found))[:15][m
+ [m
+[32m+[m[32mdef _word_count(s):[m
+[32m+[m[32m    return len(re.findall(r"[A-Za-z][A-Za-z'\-]*", s))[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef _bucket(sl):[m
+[32m+[m[32m    for key in _CATEGORY_PRIORITY:[m
+[32m+[m[32m        if key == 'questions':[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        if any(t in sl for t in CATEGORIES[key]):[m
+[32m+[m[32m            return key[m
+[32m+[m[32m    return None[m
+[32m+[m
+[32m+[m
+[32m+[m[32mdef _risk_sections(ss):[m
+[32m+[m[32m    """A short line such as 'Known business concerns.' is a heading, not a risk. The real[m
+[32m+[m[32m    risks are the plain sentences listed under it, so keep those and drop the heading."""[m
+[32m+[m[32m    headings, items = set(), set()[m
+[32m+[m[32m    for i, s in enumerate(ss):[m
+[32m+[m[32m        if s.strip().endswith('?') or _word_count(s) > 4 or _bucket(s.lower()) != 'risks':[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        found = [][m
+[32m+[m[32m        j = i + 1[m
+[32m+[m[32m        while j < len(ss) and len(found) < 6:[m
+[32m+[m[32m            nxt = ss[j][m
+[32m+[m[32m            if nxt.strip().endswith('?') or _word_count(nxt) <= 4:[m
+[32m+[m[32m                break[m
+[32m+[m[32m            if _bucket(nxt.lower()) in ('requirements', 'business_rules', 'decisions', 'actions'):[m
+[32m+[m[32m                break[m
+[32m+[m[32m            found.append(j)[m
+[32m+[m[32m            j += 1[m
+[32m+[m[32m        if found:[m
+[32m+[m[32m            headings.add(i)[m
+[32m+[m[32m            items.update(found)[m
+[32m+[m[32m    return headings, items[m
+[32m+[m
+[32m+[m
+ def extract_signals(text):[m
+     ss = sentences(text); out = {k: [] for k in CATEGORIES}[m
+[31m-    for s in ss:[m
+[32m+[m[32m    risk_headings, risk_items = _risk_sections(ss)[m
+[32m+[m[32m    for idx, s in enumerate(ss):[m
+[32m+[m[32m        if idx in risk_headings:[m
+[32m+[m[32m            continue[m
+[32m+[m[32m        if idx in risk_items:[m
+[32m+[m[32m            out['risks'].append(s); continue[m
+         sl = s.lower()[m
+         if s.strip().endswith('?'):[m
+             # A question is a question, full stop - even if it happens to contain a[m
+[36m@@ -118,4 +159,4 @@[m [mdef build_context(artifacts):[m
+     combined = '\n'.join(a['text'] for a in docs)[m
+     sig = extract_signals(combined)[m
+     sig['_context_text'] = combined[m
+[31m-    return sig, ambiguity_flags(combined), docs[m
+[32m+[m[32m    return sig, ambiguity_flags(combined), docs[m
+\ No newline at end of file[m
